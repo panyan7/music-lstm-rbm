@@ -3,6 +3,8 @@
 This repository contains our final project for CMU's [10-701 Introduction to Machine Learning](https://www.cs.cmu.edu/~epxing/Class/10701-20/).
 We implemented the LSTM-RBM model in PyTorch for chord pitch generation and additional LSTM layer for chord duration generation.
 
+*Note: We are still wrapping up the final code. The full features are not supported yet.*
+
 ## Instructions
 
 ### Training
