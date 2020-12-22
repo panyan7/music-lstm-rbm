@@ -81,8 +81,7 @@ for e in range(epoch):
         loss = rbm.forward(x, K)
         loss.backward()
         optimizer.step()
-        loss_epoch += loss.float()
-    loss_epoch /= num_data
+        loss_epoch += loss.float() / num_data
     print("Finished epoch {}, loss {}".format(e+1, loss_epoch))
 
 model = Model(num_pitch, num_duration, num_hidden, num_hidden_v, num_hidden_u)
