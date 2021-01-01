@@ -83,7 +83,7 @@ class Model(nn.Module):
         return torch.stack(x_o), torch.stack(d_o), (cost / x.shape[0])
 
     def generate(self, v0, d0, max_time, k):
-        music, duration, prob = [], [], []
+        pitch, duration, prob = [], [], []
         v, u = v0, d0
         hv, cv, hu, cu = self.hv0, self.cv0, self.hu0, self.cu0  # Set the initial parameters
         for t in range(max_time):
@@ -95,7 +95,7 @@ class Model(nn.Module):
             hv, cv, hu, cu = hv.view(self.nhv), cv.view(self.nhv), hu.view(self.nhu), cu.view(self.nhu)
             vp, v = self.gibbs_sampling(v, bh_t, bv_t, k)
             u = self.softmax(torch.matmul(self.whz, hu.t()) + torch.matmul(self.wvz, v.t()) + self.bz)
-            music.append(v)
+            pitch.append(v)
             duration.append(u)
             prob.append(vp)
 
@@ -107,7 +107,7 @@ class Model(nn.Module):
             duration[i][j] = 1
 
         # Detach so the output can be visualized
-        music = torch.stack(music).clone().detach()
+        pitch = torch.stack(pitch).clone().detach()
         prob = torch.stack(prob).clone().detach()
 
-        return music, duration, prob
+        return pitch, duration, prob

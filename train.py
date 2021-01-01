@@ -41,17 +41,6 @@ with open('data/duration.pkl', 'rb') as f:
 with open('data/model.pkl', 'rb') as f:
     model = pickle.load(f)
 
-# Make directory
-try:
-    os.mkdir('data/model')
-except OSError:
-    pass
-
-try:
-    os.mkdir('data/model/epochs')
-except OSError:
-    pass
-
 # The constants
 num_pitch = pitch[0].shape[1]
 num_duration = duration[0].shape[1]
@@ -109,9 +98,7 @@ for e in range(epochs):
 
     model.num_epoch += 1  # Update the number of epochs
     if model.num_epoch % save_for_every == 0:  # Save the model for each certain number of epochs
-        with open('data/model/epochs/model_{}.pkl'.format(model.num_epoch), 'wb') as f:
-            pickle.dump(model, f)
-        with open('data/model/model.pkl', 'wb') as f:
+        with open('data/model.pkl', 'wb') as f:
             pickle.dump(model, f)
 
     print("Finished epoch {}, free energy difference {:.5f}, cross entropy loss {:.5f}, accuracy {:.5f}".format(model.num_epoch, loss_epoch_v, loss_epoch_u, accuracy_epoch))

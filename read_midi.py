@@ -83,24 +83,24 @@ def read_midi(path='data/midi'):
     low = min(all_notes)
 
     # Process each song and turn notes into many-hot vectors
-    pitch = [[] for _ in all_songs]
-    duration = [[] for _ in all_songs]
+    pitch = []
+    duration = []
 
     for i, s in enumerate(all_songs) :
         # Get melody, duration, and offset for each song
+        v, u = [], []
         for p in s:
             if isinstance(p, note.Note):
-                pitch[i].append(read_note(p.pitch))
-                duration[i].append(int_to_vec(enc[p.duration.quarterLength], nu))
+                v.append(reduce(read_note(p.pitch), high, low))
+                u.append(int_to_vec(enc[p.duration.quarterLength], nu))
             elif isinstance(p, chord.Chord):
-                pitch[i].append(read_chord(p))
-                duration[i].append(int_to_vec(enc[p.duration.quarterLength], nu))
+                v.append(reduce(read_chord(p), high, low))
+                u.append(int_to_vec(enc[p.duration.quarterLength], nu))
             elif isinstance(p, note.Rest):
-                pitch[i].append(read_rest(p))
-                duration[i].append(int_to_vec(enc[p.duration.quarterLength], nu))
-
-        for j, v in enumerate(pitch[i]):
-            pitch[i][j] = reduce(v, high, low)
+                v.append(reduce(read_rest(p), high, low))
+                u.append(int_to_vec(enc[p.duration.quarterLength], nu))
+        pitch.append(torch.stack(v))
+        duration.append(torch.stack(u))
         print("Finished {}".format(file))
 
     try:
