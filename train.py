@@ -28,43 +28,53 @@ def cross_entropy_loss(d, d_o):
     return loss
 
 
-# The training begins here
 starttime = time.time()
-
 # Load dataset
 with open('data/pitch.pkl', 'rb') as f:
     pitch = pickle.load(f)
 with open('data/duration.pkl', 'rb') as f:
     duration = pickle.load(f)
+with open('data/data.pkl', 'rb') as f:
+    (pitch, duration) = pickle.load(f)
 
 # Load model
 with open('data/model.pkl', 'rb') as f:
     model = pickle.load(f)
 
 # The constants
+num_data = len(pitch)
 num_pitch = pitch[0].shape[1]
 num_duration = duration[0].shape[1]
 num_hidden = model.nh
 num_hidden_v = model.nhv
 num_hidden_u = model.nhu
-learning_rate = 1e-3
-epochs = 100
-K = 25
-num_data = len(pitch)
+
+print("num_data: {}".format(num_data))
+print("num_pitch: {}".format(num_pitch))
+print("num_duration: {}".format(num_duration))
+print("num_hidden: {}".format(num_hidden))
+print("num_hidden_v: {}".format(num_hidden_v))
+print("num_hidden_u: {}".format(num_hidden_u))
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-e", "--num_epoch", type=int, default=100,
+                    help="Number of epochs")
+parser.add_argument("-r", "--learning_rate", type=float, default=1e-3,
+                    help="Learning rate")
+parser.add_argument("-k", "--sample_k", type=int, default=25,
+                    help="Number of rounds for Gibbs sampling")
+args = parser.parse_args()
+
+for arg in vars(args):
+    print("{}: {}".format(arg, getattr(args, arg)))
+
+epochs = args.num_epoch
+learning_rate = args.learning_rate
+K = args.sample_k
 save_for_every = 5
 
 
-# Print the parameter constants
-print("Parameters:")
-print("Number of songs in dataset {}".format(num_data))
-print("Number of pitch: {}".format(num_pitch))
-print("Number of duration: {}".format(num_duration))
-print("RBM hidden states: {}".format(num_hidden))
-print("LSTM hidden states (pitch): {}".format(num_hidden_v))
-print("LSTM hidden states (duration): {}".format(num_hidden_u))
-print("Learning rate:{}".format(learning_rate))
-print("Current epoch:{}".format(model.num_epoch))
-print("Size of data set:{}".format(num_data))
+print("current_epoch:{}".format(model.num_epoch))
 
 
 # Initialize the optimizer
@@ -103,4 +113,4 @@ for e in range(epochs):
 
     print("Finished epoch {}, free energy difference {:.5f}, cross entropy loss {:.5f}, accuracy {:.5f}".format(model.num_epoch, loss_epoch_v, loss_epoch_u, accuracy_epoch))
 
-print("Finished in {} seconds".format(int(time.time() - starttime)))
+print("Finished in {:.5f} seconds".format(time.time() - starttime))

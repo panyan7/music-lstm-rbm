@@ -1,7 +1,7 @@
 import os
 import time
 import torch
-from music21 import *
+import music21
 import numpy as np
 import pickle
 
@@ -48,13 +48,12 @@ def vec_to_int(v):
 
 
 def read_midi(path='data/midi'):
-    # environment.UserSettings()['lilypondPath'] = 'C:/Program Files (x86)/LilyPond/usr/bin/lilypond.exe'
     all_songs, all_keys, all_durations, all_notes = [], [], [], []
     # Get all songs in list all_songs
     for o in os.listdir(path):
         file = os.path.join(path, o)
         print("Parsing {}".format(file))
-        s = converter.parse(file)
+        s = music21.converter.parse(file)
         cs = s.chordify()
         all_songs.append(cs)
 
@@ -63,24 +62,21 @@ def read_midi(path='data/midi'):
     for i, song in enumerate(all_songs):
         all_keys.append(str(song.analyze('key')))
         for p in song:
-            # print(type(p.duration.quarterLength))
-            if isinstance(p, note.Note):
+            if isinstance(p, music21.note.Note):
                 all_durations.append(p.duration.quarterLength)
                 all_notes.append(p.midi)
-            elif isinstance(p, chord.Chord):
+            elif isinstance(p, music21.chord.Chord):
                 all_durations.append(p.duration.quarterLength)
                 for n in p.pitches:
                     all_notes.append(n.midi)
-            elif isinstance(p, note.Rest):
+            elif isinstance(p, music21.note.Rest):
                 all_durations.append(p.duration.quarterLength)
-        print(str(i))
 
     dtypes = np.unique([i for i in all_durations])
     enc = dict(zip(dtypes, list(range(0, len(dtypes)))))
     dec = {i: c for c, i in enc.items()}
     nu = len(enc)
-    high = max(all_notes)
-    low = min(all_notes)
+    high, low = max(all_notes), min(all_notes)
 
     # Process each song and turn notes into many-hot vectors
     pitch = []
@@ -90,13 +86,13 @@ def read_midi(path='data/midi'):
         # Get melody, duration, and offset for each song
         v, u = [], []
         for p in s:
-            if isinstance(p, note.Note):
+            if isinstance(p, music21.note.Note):
                 v.append(reduce(read_note(p.pitch), high, low))
                 u.append(int_to_vec(enc[p.duration.quarterLength], nu))
-            elif isinstance(p, chord.Chord):
+            elif isinstance(p, music21.chord.Chord):
                 v.append(reduce(read_chord(p), high, low))
                 u.append(int_to_vec(enc[p.duration.quarterLength], nu))
-            elif isinstance(p, note.Rest):
+            elif isinstance(p, music21.note.Rest):
                 v.append(reduce(read_rest(p), high, low))
                 u.append(int_to_vec(enc[p.duration.quarterLength], nu))
         pitch.append(torch.stack(v))
@@ -114,11 +110,10 @@ def read_midi(path='data/midi'):
         pickle.dump(pitch, f)
     with open('data/duration.pkl', 'wb') as f:
         pickle.dump(duration, f)
+    with open('data/data.pkl', 'wb') as f:
+        pickle.dump((pitch, duration), f)
 
 
-if __name__ == "__main__":
-    start_time = time.time()
-
-    read_midi('data/midi')
-
-    print("Finished in {}".format(time.time() - start_time))
+start_time = time.time()
+read_midi('data/midi')
+print("Finished in {:.5f} seconds".format(time.time() - start_time))

@@ -1,4 +1,6 @@
+import time
 import pickle
+import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -49,24 +51,46 @@ class RBM(nn.Module):
         return (cost / T)
 
 
+starttime = time.time()
 with open('data/pitch.pkl', 'rb') as f:
     pitch = pickle.load(f)
 with open('data/duration.pkl', 'rb') as f:
     duration = pickle.load(f)
+with open('data/data.pkl', 'rb') as f:
+    (pitch, duration) = pickle.load(f)
 
 assert len(pitch) == len(duration)
-
-print("Number of songs in dataset {}".format(len(pitch)))
-
 num_data = len(pitch)
 num_pitch = pitch[0].shape[1]
 num_duration = duration[0].shape[1]
-num_hidden = int(num_pitch * 5)
-num_hidden_v = int(num_pitch * 10)
-num_hidden_u = int(num_duration * 2)
-epoch = 50
-learning_rate = 1e-3
-K = 25
+
+print("num_data: {}".format(num_data))
+print("num_pitch: {}".format(num_pitch))
+print("num_duration: {}".format(num_duration))
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-n", "--num_hidden", type=int, default=int(num_pitch * 5),
+                    help="Number of hidden layers for RBM")
+parser.add_argument("-v", "--num_hidden_v", type=int, default=int(num_pitch * 10),
+                    help="Number of hidden layers for the LSTM that generates pitch")
+parser.add_argument("-u", "--num_hidden_u", type=int, default=int(num_duration*2),
+                    help="Number of hidden layers for the LSTM that generates duration")
+parser.add_argument("-e", "--num_epoch", type=int, default=50,
+                    help="Number of epochs")
+parser.add_argument("-r", "--learning_rate", type=float, default=1e-3,
+                    help="Learning rate")
+parser.add_argument("-k", "--sample_k", type=int, default=25,
+                    help="Number of rounds for Gibbs sampling")
+args = parser.parse_args()
+
+num_hidden = args.num_hidden
+num_hidden_v = args.num_hidden_v
+num_hidden_u = args.num_hidden_u
+epoch = args.num_epoch
+learning_rate = args.learning_rate
+K = args.sample_k
+for arg in vars(args):
+    print("{}: {}".format(arg, getattr(args, arg)))
 
 rbm = RBM(num_pitch, num_hidden)
 optimizer = optim.AdamW(rbm.parameters(), lr=learning_rate)
@@ -92,3 +116,6 @@ model.bv = nn.Parameter(rbm.bv.clone().detach().float())
 
 with open('data/model.pkl', 'wb') as f:
     pickle.dump(model, f)
+
+print("Finished in {:.5f} seconds".format(time.time() - starttime))
+
