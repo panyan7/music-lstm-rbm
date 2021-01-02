@@ -3,6 +3,7 @@ import time
 import pickle
 import argparse
 import torch
+import torch.nn as nn
 import torch.optim as optim
 from model import Model
 
@@ -61,8 +62,10 @@ parser.add_argument("-e", "--num_epoch", type=int, default=100,
                     help="Number of epochs")
 parser.add_argument("-r", "--learning_rate", type=float, default=1e-3,
                     help="Learning rate")
-parser.add_argument("-k", "--sample_k", type=int, default=25,
+parser.add_argument("-k", "--sample_step", type=int, default=25,
                     help="Number of rounds for Gibbs sampling")
+parser.add_argument("-s", "--save_for_every", type=int, default=5,
+                    help="Number of epochs to save the model")
 args = parser.parse_args()
 
 for arg in vars(args):
@@ -70,22 +73,17 @@ for arg in vars(args):
 
 epochs = args.num_epoch
 learning_rate = args.learning_rate
-K = args.sample_k
-save_for_every = 5
-
+K = args.sample_step
+save_for_every = args.save_for_every
 
 print("current_epoch:{}".format(model.num_epoch))
-
 
 # Initialize the optimizer
 optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
 
-
 # Training
 for e in range(epochs):
-    loss_epoch_v = 0
-    loss_epoch_u = 0
-    accuracy_epoch = 0
+    loss_epoch_v, loss_epoch_u, accuracy_epoch = 0, 0, 0
     for i in range(num_data):
         x = pitch[i].float().clone().detach()
         d = duration[i].float().clone().detach()
@@ -103,7 +101,7 @@ for e in range(epochs):
         # Back-propagation through time
         loss_v.backward()
         loss_u.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 10)  # gradient clipping
+        nn.utils.clip_grad_norm_(model.parameters(), 10)  # gradient clipping
         optimizer.step()
 
     model.num_epoch += 1  # Update the number of epochs

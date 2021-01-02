@@ -79,7 +79,7 @@ parser.add_argument("-e", "--num_epoch", type=int, default=50,
                     help="Number of epochs")
 parser.add_argument("-r", "--learning_rate", type=float, default=1e-3,
                     help="Learning rate")
-parser.add_argument("-k", "--sample_k", type=int, default=25,
+parser.add_argument("-k", "--sample_step", type=int, default=25,
                     help="Number of rounds for Gibbs sampling")
 args = parser.parse_args()
 
@@ -88,7 +88,7 @@ num_hidden_v = args.num_hidden_v
 num_hidden_u = args.num_hidden_u
 epoch = args.num_epoch
 learning_rate = args.learning_rate
-K = args.sample_k
+K = args.sample_step
 for arg in vars(args):
     print("{}: {}".format(arg, getattr(args, arg)))
 

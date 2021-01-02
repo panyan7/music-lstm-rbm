@@ -21,7 +21,7 @@ The first argument `num_hidden` is the size of hidden layer of RBM, and the seco
 The number of epochs is 50, learning rate is 0.001, and k is 25<sup>[1](#k)</sup> by default.
 ```commandline
 python3 initialize.py
-python3 initialize.py -n [num_hidden] -v [num_hidden_v] -u [num_hidden_u] -e [num_epoch] -r [learning_rate] -k [sample_k]
+python3 initialize.py -n [num_hidden] -v [num_hidden_v] -u [num_hidden_u] -e [num_epoch] -r [learning_rate] -k [sample_step]
 ```
 
 Then, run the following command to train the model.
@@ -30,14 +30,14 @@ This file can be run repeatedly, the output model will be trained based on the l
 To train a new network you need to repeat the initialization step.
 ```commandline
 python3 train.py
-python3 train.py -e [num_epochs] -r [learning_rate] -k [sample_k]
+python3 train.py -e [num_epoch] -r [learning_rate] -k [sample_step]
 ```
 
 Finally generate music after the loss converges. 
 The tempo is 75.0, length is 100, and k is 10 by default.
 ```commandline
 python3 generate.py
-python3 generate.py -k [sample_k] -l [length] -t [tempo] -f [output_filename]
+python3 generate.py -k [sample_step] -l [length] -t [tempo] -f [output_filename]
 ```
 
 ### Select Your Own Dataset

@@ -51,7 +51,7 @@ with open('data/param.pkl', 'rb') as f:
     (low, dec) = pickle.load(f)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-k", "--sample_k", type=int, default=10,
+parser.add_argument("-k", "--sample_step", type=int, default=10,
                     help="Number of rounds for Gibbs sampling")
 parser.add_argument("-l", "--length", type=int, default=100,
                     help="Length of the music")
@@ -64,7 +64,7 @@ for arg in vars(args):
     print("{}: {}".format(arg, getattr(args, arg)))
 
 length = args.length
-K = args.sample_k
+K = args.sample_step
 out_tempo = args.tempo
 filename = args.filename
 
