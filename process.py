@@ -99,17 +99,16 @@ def read_midi(path='data/midi'):
         duration.append(torch.stack(u))
         print("Finished {}".format(file))
 
+    dis_v = torch.sum(torch.cat(pitch), dim=0) / torch.cat(pitch).shape[0]
+    dis_u = torch.sum(torch.cat(duration), dim=0)
+
     try:
         os.mkdir('data')
     except OSError:
         pass
 
     with open('data/param.pkl', 'wb') as f:
-        pickle.dump((low, dec), f)
-    with open('data/pitch.pkl', 'wb') as f:
-        pickle.dump(pitch, f)
-    with open('data/duration.pkl', 'wb') as f:
-        pickle.dump(duration, f)
+        pickle.dump((low, dec, dis_v, dis_u), f)
     with open('data/data.pkl', 'wb') as f:
         pickle.dump((pitch, duration), f)
 

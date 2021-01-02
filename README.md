@@ -46,6 +46,7 @@ Put any `.midi` files<sup>[2](#midi)</sup> in the `data/midi/` directory and run
 python3 process.py
 ```
 Then the default dataset will be replaced by your selected music in the directory.
+Currently the data has only one music, so ideally you should select some of your own music.
 
 ----------
 <a name="k">1.</a> RBM generates data by performing a Gibbs sampling with k steps, and you need to specify this constant k here.

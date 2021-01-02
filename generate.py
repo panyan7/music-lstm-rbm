@@ -39,16 +39,14 @@ def turn_midi(pitch, duration, low, dec, filename, out_tempo=75.0):
     song.write(fmt, filename)
 
 
+starttime = time.time()
+
 with open('data/model.pkl', 'rb') as f:
     model = pickle.load(f)
-with open('data/pitch.pkl', 'rb') as f:
-    pitch = pickle.load(f)
-with open('data/duration.pkl', 'rb') as f:
-    duration = pickle.load(f)
 with open('data/data.pkl', 'rb') as f:
     (pitch, duration) = pickle.load(f)
 with open('data/param.pkl', 'rb') as f:
-    (low, dec) = pickle.load(f)
+    (low, dec, dis_v, dis_u) = pickle.load(f)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-k", "--sample_step", type=int, default=10,
@@ -68,12 +66,12 @@ K = args.sample_step
 out_tempo = args.tempo
 filename = args.filename
 
-v0 = pitch[0][0]
-u0 = duration[0][0]
+v0 = torch.bernoulli(dis_v)
+u0 = torch.zeros(model.nu)
+u0[torch.multinomial(dis_u, 1)[0]] = 1
 pitch_out, duration_out, prob = model.generate(v0, u0, length, K)
 
-with open('music.pkl', 'wb') as f:
-    pickle.dump((pitch_out, duration_out), f)
-
 turn_midi(pitch_out, duration_out, low, dec, filename, out_tempo)
+
+print("Finished in {:.5f}".format(time.time() - starttime))
 

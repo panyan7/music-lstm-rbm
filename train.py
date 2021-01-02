@@ -31,10 +31,6 @@ def cross_entropy_loss(d, d_o):
 
 starttime = time.time()
 # Load dataset
-with open('data/pitch.pkl', 'rb') as f:
-    pitch = pickle.load(f)
-with open('data/duration.pkl', 'rb') as f:
-    duration = pickle.load(f)
 with open('data/data.pkl', 'rb') as f:
     (pitch, duration) = pickle.load(f)
 
