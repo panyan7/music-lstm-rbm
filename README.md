@@ -18,7 +18,7 @@ You can install or upgrade these libraries using `pip`.
 ### Training
 To train the model, first run the following command to initialize the model and the weights.
 The first argument `num_hidden` is the size of hidden layer of RBM, and the second and third arguments `num_hidden_v` and `num_hidden_u` are the sizes of hidden layers of the two LSTMs respectively.
-The number of epochs is 50, learning rate is 0.001, and k is 25[^k] by default.
+The number of epochs is 50, learning rate is 0.001, and k is 25<sup>[1](#k)</sup> by default.
 ```commandline
 python3 initialize.py
 python3 initialize.py -n [num_hidden] -v [num_hidden_v] -u [num_hidden_u] -e [num_epoch] -r [learning_rate] -k [sample_k]
@@ -41,12 +41,13 @@ python3 generate.py -k [sample_k] -l [length] -t [tempo] -f [output_filename]
 ```
 
 ### Select Your Own Dataset
-Put any `.midi` files[^midi] in the `data/midi/` directory and run the following command.
+Put any `.midi` files<sup>[2](#midi)</sup> in the `data/midi/` directory and run the following command.
 ```commandline
 python3 process.py
 ```
 Then the default dataset will be replaced by your selected music in the directory.
 
+----------
+<a name="k">1.</a> RBM generates data by performing a Gibbs sampling with k steps, and you need to specify this constant k here.
 
-[^k]: RBM generates data by performing a Gibbs sampling with *k* steps, and you need to specify this constant *k* here.
-[^midi]: The midi-version musics of some popular classical music composers can be downloaded from [Classical Piano Midi Page](http://www.piano-midi.de/midicoll.htm). We would suggest using songs of the same instrument, and if possible the same composer, in order to get good results.
+<a name="midi">2.</a> The midi-version musics of some popular classical music composers can be downloaded from [Classical Piano Midi Page](http://www.piano-midi.de/midicoll.htm). We would suggest using songs of the same instrument, and if possible the same composer, in order to get good results.*
