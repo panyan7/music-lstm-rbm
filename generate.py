@@ -4,7 +4,7 @@ import torch
 import pickle
 import argparse
 import music21
-from model import Model
+from model import MusicGenerationModel
 
 
 def vec_to_int(v):
@@ -39,39 +39,44 @@ def turn_midi(pitch, duration, low, dec, filename, out_tempo=75.0):
     song.write(fmt, filename)
 
 
-starttime = time.time()
+def main():
+    starttime = time.time()
 
-with open('data/model.pkl', 'rb') as f:
-    model = pickle.load(f)
-with open('data/data.pkl', 'rb') as f:
-    (pitch, duration) = pickle.load(f)
-with open('data/param.pkl', 'rb') as f:
-    (low, dec, dis_v, dis_u) = pickle.load(f)
+    with open('data/model.pkl', 'rb') as f:
+        model = pickle.load(f)
+    with open('data/data.pkl', 'rb') as f:
+        (pitch, duration) = pickle.load(f)
+    with open('data/param.pkl', 'rb') as f:
+        (low, dec, dis_v, dis_u) = pickle.load(f)
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-k", "--sample_step", type=int, default=10,
-                    help="Number of rounds for Gibbs sampling")
-parser.add_argument("-l", "--length", type=int, default=100,
-                    help="Length of the music")
-parser.add_argument("-t", "--tempo", type=float, default=75.0,
-                    help="Tempo of the music")
-parser.add_argument("-f", "--filename", type=str, default="music.mid",
-                    help="Output filename (.mid or .xml)")
-args = parser.parse_args()
-for arg in vars(args):
-    print("{}: {}".format(arg, getattr(args, arg)))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-k", "--sample_step", type=int, default=10,
+                        help="Number of rounds for Gibbs sampling")
+    parser.add_argument("-l", "--length", type=int, default=100,
+                        help="Length of the music")
+    parser.add_argument("-t", "--tempo", type=float, default=75.0,
+                        help="Tempo of the music")
+    parser.add_argument("-f", "--filename", type=str, default="music.mid",
+                        help="Output filename (.mid or .xml)")
+    args = parser.parse_args()
+    for arg in vars(args):
+        print("{}: {}".format(arg, getattr(args, arg)))
 
-length = args.length
-K = args.sample_step
-out_tempo = args.tempo
-filename = args.filename
+    length = args.length
+    K = args.sample_step
+    out_tempo = args.tempo
+    filename = args.filename
 
-v0 = torch.bernoulli(dis_v)
-u0 = torch.zeros(model.nu)
-u0[torch.multinomial(dis_u, 1)[0]] = 1
-pitch_out, duration_out, prob = model.generate(v0, u0, length, K)
+    v0 = torch.bernoulli(dis_v)
+    u0 = torch.zeros(model.nu)
+    u0[torch.multinomial(dis_u, 1)[0]] = 1
+    pitch_out, duration_out, prob = model.generate(v0, u0, length, K)
 
-turn_midi(pitch_out, duration_out, low, dec, filename, out_tempo)
+    turn_midi(pitch_out, duration_out, low, dec, filename, out_tempo)
 
-print("Finished in {:.5f}".format(time.time() - starttime))
+    print("Finished in {:.5f}".format(time.time() - starttime))
+
+
+if __name__ == '__main__':
+    main()
 

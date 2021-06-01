@@ -4,7 +4,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from model import Model
+from model import MusicGenerationModel
 
 
 class RBM(nn.Module):
@@ -51,67 +51,75 @@ class RBM(nn.Module):
         return (cost / T)
 
 
-starttime = time.time()
-with open('data/data.pkl', 'rb') as f:
-    (pitch, duration) = pickle.load(f)
+def main():
+    starttime = time.time()
+    with open('data/data.pkl', 'rb') as f:
+        (pitch, duration) = pickle.load(f)
 
-assert len(pitch) == len(duration)
-num_data = len(pitch)
-num_pitch = pitch[0].shape[1]
-num_duration = duration[0].shape[1]
+    assert len(pitch) == len(duration)
+    num_data = len(pitch)
+    num_pitch = pitch[0].shape[1]
+    num_duration = duration[0].shape[1]
 
-print("num_data: {}".format(num_data))
-print("num_pitch: {}".format(num_pitch))
-print("num_duration: {}".format(num_duration))
+    print("num_data: {}".format(num_data))
+    print("num_pitch: {}".format(num_pitch))
+    print("num_duration: {}".format(num_duration))
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-n", "--num_hidden", type=int, default=int(num_pitch * 5),
-                    help="Number of hidden layers for RBM")
-parser.add_argument("-v", "--num_hidden_v", type=int, default=int(num_pitch * 10),
-                    help="Number of hidden layers for the LSTM that generates pitch")
-parser.add_argument("-u", "--num_hidden_u", type=int, default=int(num_duration*2),
-                    help="Number of hidden layers for the LSTM that generates duration")
-parser.add_argument("-e", "--num_epoch", type=int, default=50,
-                    help="Number of epochs")
-parser.add_argument("-r", "--learning_rate", type=float, default=1e-3,
-                    help="Learning rate")
-parser.add_argument("-k", "--sample_step", type=int, default=25,
-                    help="Number of rounds for Gibbs sampling")
-args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", "--num_hidden", type=int, default=int(num_pitch * 5),
+                        help="Number of hidden layers for RBM")
+    parser.add_argument("-v", "--num_hidden_v", type=int, default=int(num_pitch * 10),
+                        help="Number of hidden layers for the LSTM that generates pitch")
+    parser.add_argument("-u", "--num_hidden_u", type=int, default=int(num_duration*2),
+                        help="Number of hidden layers for the LSTM that generates duration")
+    parser.add_argument("-e", "--num_epoch", type=int, default=50,
+                        help="Number of epochs")
+    parser.add_argument("-r", "--learning_rate", type=float, default=1e-3,
+                        help="Learning rate")
+    parser.add_argument("-k", "--sample_step", type=int, default=25,
+                        help="Number of rounds for Gibbs sampling")
+    parser.add_argument("--device", type=str, default="cpu", help="The device to use in training")
+    args = parser.parse_args()
 
-num_hidden = args.num_hidden
-num_hidden_v = args.num_hidden_v
-num_hidden_u = args.num_hidden_u
-epoch = args.num_epoch
-learning_rate = args.learning_rate
-K = args.sample_step
-for arg in vars(args):
-    print("{}: {}".format(arg, getattr(args, arg)))
+    num_hidden = args.num_hidden
+    num_hidden_v = args.num_hidden_v
+    num_hidden_u = args.num_hidden_u
+    epoch = args.num_epoch
+    learning_rate = args.learning_rate
+    K = args.sample_step
+    for arg in vars(args):
+        print("{}: {}".format(arg, getattr(args, arg)))
 
-rbm = RBM(num_pitch, num_hidden)
-optimizer = optim.AdamW(rbm.parameters(), lr=learning_rate)
+    rbm = RBM(num_pitch, num_hidden)
+    optimizer = optim.AdamW(rbm.parameters(), lr=learning_rate)
 
 
-# Pre-training the RBM
-for e in range(epoch):
-    loss_epoch = 0
-    for song in pitch:
-        optimizer.zero_grad()
-        x = song.clone().detach().float()
-        loss = rbm.forward(x, K)
-        loss.backward()
-        optimizer.step()
-        loss_epoch += loss.float() / num_data
-    print("Finished epoch {}, loss {:.5f}".format(e+1, loss_epoch))
+    # Pre-training the RBM
+    for e in range(epoch):
+        loss_epoch = 0
+        for song in pitch:
+            optimizer.zero_grad()
+            x = song.clone().detach().float()
+            loss = rbm.forward(x, K)
+            loss.backward()
+            optimizer.step()
+            loss_epoch += loss.float() / num_data
+        print("Finished epoch {}, loss {:.5f}".format(e+1, loss_epoch))
 
-model = Model(num_pitch, num_duration, num_hidden, num_hidden_v, num_hidden_u)
+    model = MusicGenerationModel(num_pitch, num_duration, num_hidden, num_hidden_v, num_hidden_u)
 
-model.w = nn.Parameter(rbm.w.clone().detach().float())
-model.bh = nn.Parameter(rbm.bh.clone().detach().float())
-model.bv = nn.Parameter(rbm.bv.clone().detach().float())
+    model.w = nn.Parameter(rbm.w.clone().detach().float())
+    model.bh = nn.Parameter(rbm.bh.clone().detach().float())
+    model.bv = nn.Parameter(rbm.bv.clone().detach().float())
 
-with open('data/model.pkl', 'wb') as f:
-    pickle.dump(model, f)
+    model.to(args.device)
 
-print("Finished in {:.5f} seconds".format(time.time() - starttime))
+    with open('data/model.pkl', 'wb') as f:
+        pickle.dump(model, f)
+
+    print("Finished in {:.5f} seconds".format(time.time() - starttime))
+
+
+if __name__ == '__main__':
+    main()
 
