@@ -4,6 +4,7 @@ import torch
 import music21
 import numpy as np
 import pickle
+from tqdm import tqdm
 
 
 def reduce(vector, high, low):
@@ -50,16 +51,17 @@ def vec_to_int(v):
 def read_midi(path='data/midi'):
     all_songs, all_keys, all_durations, all_notes = [], [], [], []
     # Get all songs in list all_songs
-    for o in os.listdir(path):
+    print('Parsing...')
+    for o in tqdm(os.listdir(path)):
         file = os.path.join(path, o)
-        print("Parsing {}".format(file))
         s = music21.converter.parse(file)
         cs = s.chordify()
         all_songs.append(cs)
 
     # Preprocess all_songs to get the encodings for all durations and the corresponding table.
     # Also the highest and lowest pitch
-    for i, song in enumerate(all_songs):
+    print('Preprocessing...')
+    for i, song in tqdm(enumerate(all_songs)):
         all_keys.append(str(song.analyze('key')))
         for p in song:
             if isinstance(p, music21.note.Note):
@@ -82,7 +84,8 @@ def read_midi(path='data/midi'):
     pitch = []
     duration = []
 
-    for i, s in enumerate(all_songs) :
+    print('Encoding...')
+    for i, s in tqdm(enumerate(all_songs)):
         # Get melody, duration, and offset for each song
         v, u = [], []
         for p in s:
@@ -97,7 +100,6 @@ def read_midi(path='data/midi'):
                 u.append(int_to_vec(enc[p.duration.quarterLength], nu))
         pitch.append(torch.stack(v))
         duration.append(torch.stack(u))
-        print("Finished {}".format(file))
 
     dis_v = torch.sum(torch.cat(pitch), dim=0) / torch.cat(pitch).shape[0]
     dis_u = torch.sum(torch.cat(duration), dim=0)
