@@ -31,13 +31,27 @@ def cross_entropy_loss(d, d_o):
 
 def main():
     starttime = time.time()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-e", "--num_epoch", type=int, default=100,
+                        help="Number of epochs")
+    parser.add_argument("-r", "--learning_rate", type=float, default=1e-3,
+                        help="Learning rate")
+    parser.add_argument("-k", "--sample_step", type=int, default=25,
+                        help="Number of rounds for Gibbs sampling")
+    parser.add_argument("-s", "--save_for_every", type=int, default=5,
+                        help="Number of epochs to save the model")
+    parser.add_argument("--data_path", type=str, default="data",
+                        help="Path to saved data")
+    parser.add_argument("--device", type=str, default='cpu',
+                        help="Device")
+    args = parser.parse_args()
+
     # Load dataset
     with open('data/data.pkl', 'rb') as f:
         (pitch, duration) = pickle.load(f)
 
     # Load model
-    with open('data/model.pkl', 'rb') as f:
-        model = pickle.load(f)
+    model = torch.load(args.data_path + '/model.pth')
 
     # The constants
     num_data = len(pitch)
@@ -54,16 +68,6 @@ def main():
     print("num_hidden_v: {}".format(num_hidden_v))
     print("num_hidden_u: {}".format(num_hidden_u))
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-e", "--num_epoch", type=int, default=100,
-                        help="Number of epochs")
-    parser.add_argument("-r", "--learning_rate", type=float, default=1e-3,
-                        help="Learning rate")
-    parser.add_argument("-k", "--sample_step", type=int, default=25,
-                        help="Number of rounds for Gibbs sampling")
-    parser.add_argument("-s", "--save_for_every", type=int, default=5,
-                        help="Number of epochs to save the model")
-    args = parser.parse_args()
 
     for arg in vars(args):
         print("{}: {}".format(arg, getattr(args, arg)))
@@ -81,13 +85,13 @@ def main():
     # Training
     for e in range(epochs):
         loss_epoch_v, loss_epoch_u, accuracy_epoch = 0, 0, 0
-        for i in range(num_data):
-            x = pitch[i].float().clone().detach()
-            d = duration[i].float().clone().detach()
+        for x, d in zip(pitch, duration):
+            x = x.float().clone().detach().to(args.device)
+            d = d.float().clone().detach().to(args.device)
 
             # Feed forward the current sequence
             optimizer.zero_grad()  # Set the gradients to 0
-            x_o, d_o, loss_v = model.forward(x, d, K)
+            x_o, d_o, loss_v = model(x, d, K)
             loss_u = cross_entropy_loss(d, d_o)
 
             # Loss and accuracy to be printed
@@ -103,8 +107,7 @@ def main():
 
         model.num_epoch += 1  # Update the number of epochs
         if model.num_epoch % save_for_every == 0:  # Save the model for each certain number of epochs
-            with open('data/model.pkl', 'wb') as f:
-                pickle.dump(model, f)
+            torch.save(model, args.data_path + '/model.pth')
 
         print("Finished epoch {}, free energy difference {:.5f}, cross entropy loss {:.5f}, accuracy {:.5f}".format(model.num_epoch, loss_epoch_v, loss_epoch_u, accuracy_epoch))
 

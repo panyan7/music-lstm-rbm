@@ -41,14 +41,6 @@ def turn_midi(pitch, duration, low, dec, filename, out_tempo=75.0):
 
 def main():
     starttime = time.time()
-
-    with open('data/model.pkl', 'rb') as f:
-        model = pickle.load(f)
-    with open('data/data.pkl', 'rb') as f:
-        (pitch, duration) = pickle.load(f)
-    with open('data/param.pkl', 'rb') as f:
-        (low, dec, dis_v, dis_u) = pickle.load(f)
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-k", "--sample_step", type=int, default=10,
                         help="Number of rounds for Gibbs sampling")
@@ -58,21 +50,29 @@ def main():
                         help="Tempo of the music")
     parser.add_argument("-f", "--filename", type=str, default="music.mid",
                         help="Output filename (.mid or .xml)")
+    parser.add_argument("--data_path", type=str, default="data",
+                        help="Path to saved data")
+    parser.add_argument("--device", type=str, default="cpu",
+                        help="Device")
     args = parser.parse_args()
+
+    model = torch.load(args.data_path + '/model.pth')
+    model = model.to(args.device)
+    with open(args.data_path + '/data.pkl', 'rb') as f:
+        (pitch, duration) = pickle.load(f)
+    with open(args.data_path + '/param.pkl', 'rb') as f:
+        (low, dec, dis_v, dis_u) = pickle.load(f)
+
     for arg in vars(args):
         print("{}: {}".format(arg, getattr(args, arg)))
 
-    length = args.length
-    K = args.sample_step
-    out_tempo = args.tempo
-    filename = args.filename
-
-    v0 = torch.bernoulli(dis_v)
-    u0 = torch.zeros(model.nu)
+    v0 = torch.bernoulli(dis_v).to(args.device)
+    u0 = torch.zeros(model.nu).to(args.device)
     u0[torch.multinomial(dis_u, 1)[0]] = 1
-    pitch_out, duration_out, prob = model.generate(v0, u0, length, K)
+    pitch_out, duration_out, prob = model.generate(v0, u0, args.length, args.sample_step)
+    pitch_out, duration_out = pitch_out.to('cpu'), duration_out.to('cpu')
 
-    turn_midi(pitch_out, duration_out, low, dec, filename, out_tempo)
+    turn_midi(pitch_out, duration_out, low, dec, args.filename, args.tempo)
 
     print("Finished in {:.5f}".format(time.time() - starttime))
 
